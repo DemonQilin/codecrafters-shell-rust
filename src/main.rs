@@ -1,36 +1,28 @@
-#[allow(unused_imports)]
 use std::io::{self, Write};
 use std::process;
 
-use anyhow::Ok;
-
 fn main() {
-    // REPL
     loop {
         print!("$ ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush().expect("Failed to flush stdout");
 
-        // Wait for user input
         let mut line = String::new();
-        io::stdin().read_line(&mut line).unwrap();
+        io::stdin()
+            .read_line(&mut line)
+            .expect("Failed to read line");
 
-        // Handle input
-        if line.trim().starts_with("exit") {
-            let arg = line
-                .trim()
-                .split(' ')
-                .collect::<Vec<_>>()
-                .get(1)
-                .map_or(0, |arg| arg.parse().or(Ok(1)).unwrap());
+        let trimmed = line.trim();
 
-            if arg != 0 {
-                process::exit(1);
+        if trimmed.starts_with("exit") {
+            let parts: Vec<&str> = trimmed.split_whitespace().collect();
+            let exit_code = if parts.len() > 1 {
+                parts[1].parse::<i32>().unwrap_or(1)
             } else {
-                process::exit(0);
-            }
+                0
+            };
+            process::exit(exit_code);
+        } else {
+            println!("{}: command not found", trimmed);
         }
-
-        // Print error
-        println!("{}: command not found", line.trim());
     }
 }
