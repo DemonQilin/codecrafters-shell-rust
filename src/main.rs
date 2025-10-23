@@ -17,6 +17,7 @@ fn main() {
         // Handle input
         if line.trim().starts_with("exit") {
             let arg = line
+                .trim()
                 .split(' ')
                 .collect::<Vec<_>>()
                 .get(1)
