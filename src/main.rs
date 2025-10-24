@@ -1,5 +1,6 @@
 use std::io::{self, Write};
-use std::process;
+
+use codecrafters_shell::commands::{EchoCommand, Executable, ExitCommand};
 
 fn main() {
     loop {
@@ -12,17 +13,18 @@ fn main() {
             .expect("Failed to read line");
 
         let trimmed = line.trim();
-
-        if trimmed.starts_with("exit") {
-            let parts: Vec<&str> = trimmed.split_whitespace().collect();
-            let exit_code = if parts.len() > 1 {
-                parts[1].parse::<i32>().unwrap_or(1)
+        let (command, args): (&str, Vec<&str>) = {
+            if let Some((command, rest_line)) = trimmed.split_once(" ") {
+                (command, rest_line.split_ascii_whitespace().collect())
             } else {
-                0
-            };
-            process::exit(exit_code);
-        } else {
-            println!("{}: command not found", trimmed);
-        }
+                (trimmed, Vec::new())
+            }
+        };
+
+        match command {
+            EchoCommand::NAME => EchoCommand::execute(&args),
+            ExitCommand::NAME => ExitCommand::execute(&args),
+            _ => println!("{}: command not found", command),
+        };
     }
 }
