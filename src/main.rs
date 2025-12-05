@@ -1,6 +1,9 @@
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    process,
+};
 
-use codecrafters_shell::commands::Command;
+use codecrafters_shell::{commands::Command, utils};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shell = Shell;
@@ -40,8 +43,22 @@ impl Shell {
 
             if let Ok(command) = Command::try_from(command) {
                 command.run(&args);
+            } else if utils::find_os_executable(command).is_some() {
+                let mut os_command = process::Command::new(command);
+
+                // os_command.arg(command);
+                for arg in args {
+                    os_command.arg(arg);
+                }
+
+                let output = os_command.output()?;
+                if output.status.success() {
+                    io::stdout().write_all(&output.stdout)?;
+                } else {
+                    io::stderr().write_all(&output.stderr)?;
+                }
             } else {
-                println!("{}: command not found", command)
+                println!("{}: command not found", command);
             }
         }
         Ok(())
