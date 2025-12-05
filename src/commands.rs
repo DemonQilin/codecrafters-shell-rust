@@ -1,4 +1,6 @@
-use std::{env, fmt, os::unix::fs::PermissionsExt, process};
+use std::{env, fmt, process};
+
+use is_executable::IsExecutable;
 
 #[derive(Debug)]
 pub enum CommandError {
@@ -72,23 +74,8 @@ fn run_type(arg: Option<&str>) {
         return;
     }
 
-    let found = env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths).find_map(|dir| {
-            let full_path = dir.join(arg);
-
-            if full_path.is_file() {
-                let is_executable = full_path
-                    .metadata()
-                    .is_ok_and(|m| m.permissions().mode() & 0o111 != 0);
-
-                if is_executable {
-                    return Some(full_path);
-                }
-            }
-
-            None
-        })
-    });
+    let found = env::var_os("PATH")
+        .and_then(|paths| env::split_paths(&paths).find(|dir| dir.join(arg).is_executable()));
 
     if let Some(path) = found {
         println!("{arg} is {}", path.display());
