@@ -1,6 +1,6 @@
-use std::{env, fmt, process};
+use std::{fmt, process};
 
-use is_executable::IsExecutable;
+use crate::utils;
 
 #[derive(Debug)]
 pub enum CommandError {
@@ -74,10 +74,7 @@ fn run_type(arg: Option<&str>) {
         return;
     }
 
-    let found = env::var_os("PATH")
-        .and_then(|paths| env::split_paths(&paths).find(|dir| dir.join(arg).is_executable()));
-
-    if let Some(path) = found {
+    if let Some(path) = utils::find_os_executable(arg) {
         println!("{arg} is {}", path.display());
     } else {
         println!("{}: not found", arg)
