@@ -46,7 +46,7 @@ impl Shell {
             } else if utils::find_os_executable(command).is_some() {
                 let mut os_command = process::Command::new(command);
 
-                // os_command.arg(command);
+                os_command.arg(command);
                 for arg in args {
                     os_command.arg(arg);
                 }
