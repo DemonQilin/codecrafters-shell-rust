@@ -1,4 +1,4 @@
-use std::{fmt, process};
+use std::{env, fmt, os::unix::fs::PermissionsExt, process};
 
 #[derive(Debug)]
 pub enum CommandError {
@@ -60,9 +60,39 @@ fn run_exit(arg: Option<&str>) {
 }
 
 fn run_type(arg: Option<&str>) {
-    match arg.map(Command::try_from) {
-        None => eprintln!("Required argument: type <command>"),
-        Some(Err(_)) => println!("{}: not found", arg.unwrap()),
-        Some(Ok(_)) => println!("{} is a shell builtin", arg.unwrap()),
+    if arg.is_none() {
+        eprintln!("Required argument: type <command>");
+        return;
+    }
+
+    let arg = arg.unwrap();
+    let command: Result<Command, _> = arg.try_into();
+    if command.is_ok() {
+        println!("{} is a shell builtin", arg);
+        return;
+    }
+
+    let found = env::var_os("PATH").and_then(|paths| {
+        env::split_paths(&paths).find_map(|dir| {
+            let full_path = dir.join(arg);
+
+            if full_path.is_file() {
+                let is_executable = full_path
+                    .metadata()
+                    .is_ok_and(|m| m.permissions().mode() & 0o111 != 0);
+
+                if is_executable {
+                    return Some(full_path);
+                }
+            }
+
+            None
+        })
+    });
+
+    if let Some(path) = found {
+        println!("{arg} is {}", path.display());
+    } else {
+        println!("{}: not found", arg)
     }
 }
