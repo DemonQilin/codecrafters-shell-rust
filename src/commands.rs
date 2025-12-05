@@ -19,6 +19,7 @@ impl std::error::Error for CommandError {}
 pub enum Command {
     Echo,
     Exit,
+    Type,
 }
 
 impl<'a> TryFrom<&'a str> for Command {
@@ -28,6 +29,7 @@ impl<'a> TryFrom<&'a str> for Command {
         match value {
             "echo" => Ok(Self::Echo),
             "exit" => Ok(Self::Exit),
+            "type" => Ok(Self::Type),
             _ => Err(CommandError::NotFound(value.to_owned())),
         }
     }
@@ -38,6 +40,7 @@ impl Command {
         match self {
             Command::Echo => run_echo(args),
             Command::Exit => run_exit(args.first().copied()),
+            Command::Type => run_type(args.first().copied()),
         };
     }
 }
@@ -54,4 +57,12 @@ fn run_exit(arg: Option<&str>) {
     };
 
     process::exit(exit_code);
+}
+
+fn run_type(arg: Option<&str>) {
+    match arg.map(Command::try_from) {
+        None => eprintln!("Required argument: type <command>"),
+        Some(Err(_)) => println!("{}: not found", arg.unwrap()),
+        Some(Ok(_)) => println!("{} is a shell builtin", arg.unwrap()),
+    }
 }
