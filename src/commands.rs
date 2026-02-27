@@ -1,21 +1,12 @@
-use std::{fmt, process};
+use std::process;
 
 use crate::utils;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum CommandError {
+    #[error("{0}: command not found")]
     NotFound(String),
 }
-
-impl fmt::Display for CommandError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CommandError::NotFound(value) => write!(f, "{value}: command not found"),
-        }
-    }
-}
-
-impl std::error::Error for CommandError {}
 
 #[derive(Debug)]
 pub enum Command {
@@ -52,24 +43,18 @@ fn run_echo(args: &[&str]) {
 }
 
 fn run_exit(arg: Option<&str>) {
-    let exit_code = if let Some(value) = arg {
-        value.parse::<i32>().unwrap_or(1)
-    } else {
-        0
-    };
+    let exit_code = arg.map_or(0, |v| v.parse::<i32>().unwrap_or(1));
 
     process::exit(exit_code);
 }
 
 fn run_type(arg: Option<&str>) {
-    if arg.is_none() {
+    let Some(arg) = arg else {
         eprintln!("Required argument: type <command>");
         return;
-    }
+    };
 
-    let arg = arg.unwrap();
-    let command: Result<Command, _> = arg.try_into();
-    if command.is_ok() {
+    if Command::try_from(arg).is_ok() {
         println!("{} is a shell builtin", arg);
         return;
     }
