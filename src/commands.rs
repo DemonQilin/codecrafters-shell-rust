@@ -1,4 +1,4 @@
-use std::process;
+use std::{env, process};
 
 use crate::utils;
 
@@ -13,6 +13,7 @@ pub enum Command {
     Echo,
     Exit,
     Type,
+    Pwd,
 }
 
 impl<'a> TryFrom<&'a str> for Command {
@@ -23,6 +24,7 @@ impl<'a> TryFrom<&'a str> for Command {
             "echo" => Ok(Self::Echo),
             "exit" => Ok(Self::Exit),
             "type" => Ok(Self::Type),
+            "pwd" => Ok(Self::Pwd),
             _ => Err(CommandError::NotFound(value.to_owned())),
         }
     }
@@ -34,6 +36,7 @@ impl Command {
             Command::Echo => run_echo(args),
             Command::Exit => run_exit(args.first().copied()),
             Command::Type => run_type(args.first().copied()),
+            Command::Pwd => run_pwd(),
         };
     }
 }
@@ -63,5 +66,12 @@ fn run_type(arg: Option<&str>) {
         println!("{arg} is {}", path.display());
     } else {
         println!("{}: not found", arg)
+    }
+}
+
+fn run_pwd() {
+    match env::current_dir() {
+        Ok(path) => println!("{}", path.display()),
+        Err(e) => eprintln!("pwd: {e}"),
     }
 }
