@@ -81,8 +81,8 @@ fn run_pwd() {
 
 fn run_cd(arg: Option<&str>) {
     let new_path = match arg {
-        Some(a) => Path::new(a).to_path_buf(),
-        None => match env::home_dir() {
+        Some(a) if a != "~" => Path::new(a).to_path_buf(),
+        _ => match env::home_dir() {
             Some(home_dir) => home_dir,
             None => {
                 eprint!("cd: HOME dir not available");
