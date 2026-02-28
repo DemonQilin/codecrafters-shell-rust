@@ -1,4 +1,4 @@
-use std::{env, process};
+use std::{env, path::Path, process};
 
 use crate::utils;
 
@@ -14,6 +14,7 @@ pub enum Command {
     Exit,
     Type,
     Pwd,
+    Cd,
 }
 
 impl<'a> TryFrom<&'a str> for Command {
@@ -25,6 +26,7 @@ impl<'a> TryFrom<&'a str> for Command {
             "exit" => Ok(Self::Exit),
             "type" => Ok(Self::Type),
             "pwd" => Ok(Self::Pwd),
+            "cd" => Ok(Self::Cd),
             _ => Err(CommandError::NotFound(value.to_owned())),
         }
     }
@@ -37,6 +39,7 @@ impl Command {
             Command::Exit => run_exit(args.first().copied()),
             Command::Type => run_type(args.first().copied()),
             Command::Pwd => run_pwd(),
+            Command::Cd => run_cd(args.first().copied()),
         };
     }
 }
@@ -73,5 +76,29 @@ fn run_pwd() {
     match env::current_dir() {
         Ok(path) => println!("{}", path.display()),
         Err(e) => eprintln!("pwd: {e}"),
+    }
+}
+
+fn run_cd(arg: Option<&str>) {
+    let new_path = match arg {
+        Some(a) => Path::new(a).to_path_buf(),
+        None => match env::home_dir() {
+            Some(home_dir) => home_dir,
+            None => {
+                eprint!("cd: HOME dir not available");
+                return;
+            }
+        },
+    };
+
+    if !new_path.exists() {
+        eprintln!("cd: {}: No such file or directory", new_path.display());
+        return;
+    };
+
+    if new_path.is_dir() {
+        if let Err(e) = env::set_current_dir(new_path) {
+            eprintln!("cd: {e}");
+        };
     }
 }
